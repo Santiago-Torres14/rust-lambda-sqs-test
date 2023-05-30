@@ -28,7 +28,10 @@ build_image(){
 }
 
 run_image(){
-    docker container run --rm "$_DOCKER_IMAGE_NAME"
+    if ! docker container run --rm "$_DOCKER_IMAGE_NAME" ; then 
+        echo "[CONTAINER EXECUTION FAILED]"
+        clean_up
+    fi
 }
 
 

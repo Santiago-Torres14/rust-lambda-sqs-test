@@ -26,23 +26,24 @@ check_download_tool() {
     if which curl 1>/dev/null; then
         _DOWNLOAD_TOOL = "curl"
         logger "curl is installed"
-        return 0
     elif which wget 1>/dev/null; then
         _DOWNLOAD_TOOL = "wget"
         logger "wget is installed"
-        return 0
     else
         logger "installing curl"
-        apt update -y && apt install curl -y
-        return 0
+        if apt update -y && apt install -y curl; then 
+            logger "curl installed successfully"
+            _DOWNLOAD_TOOL = "curl"
+        else
+            logger "curl could not be installed" 1
+        fi
     fi
-    logger "Curl could not be installed" "1"
 }
 
-get_awl_cli_url(){
+get_aws_cli_url(){
     local _version
     local _architecture
-    local _aws_cli_url=""
+    local _cli_url=""
 
     _version="$1"
     _architecture="$2"
@@ -55,18 +56,32 @@ get_awl_cli_url(){
         fi
 
         if [[ "$_version" = 2 ]] ; then
-            _aws_cli_url = "https://awscli.amazonaws.com/awscli-exe-linux-${_architecture}.zip"
+            _cli_url = "https://awscli.amazonaws.com/awscli-exe-linux-${_architecture}.zip"
         else
-            _aws_cli_url = "https://awscli.amazonaws.com/awscli-exe-linux-${_architecture}-${_version}.zip"
+            _cli_url = "https://awscli.amazonaws.com/awscli-exe-linux-${_architecture}-${_version}.zip"
         fi
     fi
     
-    echo "$_aws_cli_url"
+    echo "$_cli_url"
 }
 
 download_aws_cli(){
-    
+   local _cli_url
+   local _output_file
+   _aws_cli_url="$1"
+   _output_aws_file="$2"
+
+   if [[ $"_DOWNLOAD_TOOL" = "curl" ]]; then
+    curl -sL -o "$_output_file" "$_cli_url"
+   elif [[ $"_DOWNLOAD_TOOL" = "wget" ]]; then
+    wget -q -O "$_output_file" "$_cli_url"
+   fi
+
+   logger "AWS installer downloaded"
 }
+
+#install_aws_cli(){
+#}
 
 # DEFAULT VALUES
 _DEAFULT_ARCH="amd64"
@@ -76,6 +91,8 @@ _DEFAULT_VERSION="2"
 _AWS_CLI_VERSION="${1:-"$AWS_CLI_VERSION"}"
 _AWS_CLI_VERSION="${_AWS_CLI_VERSION:-"$_DEFAULT_VERSION"}"
 
+_OUTPUT_AWS_FILE="awscliv${_AWS_CLI_VERSION}.zip"
+
 _AWS_CLI_ARCH="${2:-"$AWS_CLI_ARCH"}"
 _AWS_CLI_ARCH="${_AWS_CLI_ARCH,,}"
 _AWS_CLI_ARCH="${_AWS_CLI_ARCH:-"$_DEAFULT_ARCH"}"
@@ -83,3 +100,5 @@ _AWS_CLI_ARCH="${_AWS_CLI_ARCH:-"$_DEAFULT_ARCH"}"
 _WORKDIR="$PWD/awscli"
 
 set_workdir "$_WORKDIR"
+_AWS_CLI_URL=$(get_aws_cli_url "$_AWS_CLI_VERSION" "$_AWS_CLI_ARCH" 2>&1)
+download_aws_cli "$_AWS_CLI_URL" "$_OUTPUT_AWS_FILE"
