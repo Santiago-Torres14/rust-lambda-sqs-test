@@ -31,6 +31,8 @@ run_image(){
     if ! docker container run --rm "$_DOCKER_IMAGE_NAME" ; then 
         echo "[CONTAINER EXECUTION FAILED]"
         clean_up
+    else
+        clean_up
     fi
 }
 
@@ -40,5 +42,3 @@ is_docker_install
 build_image
 
 run_image
-
-clean_up
